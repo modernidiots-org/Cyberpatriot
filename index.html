@@ -1,125 +1,110 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.1">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="utf-8" />
+  <title>CyberPatriot Leaderboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: #0f172a; color: #e6eef8; margin: 0; padding: 24px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    h1 { font-size:1.4rem; margin:0; }
+    .meta { color:#9fb3d8; font-size:0.9rem; }
+    table { width:100%; border-collapse:collapse; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:8px; overflow:hidden; }
+    th, td { padding:10px 12px; text-align:left; font-size:0.95rem; }
+    th { background: rgba(255,255,255,0.03); color:#cfe5ff; position:sticky; top:0; z-index:2; }
+    tr { border-bottom:1px solid rgba(255,255,255,0.03); }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    .rank { width:64px; font-weight:700; color:#ffd166; }
+    .score { width:120px; text-align:right; font-weight:700; color:#9ae6b4; }
+    .small { font-size:0.8rem; color:#9fb3d8; }
+    .error { color:#ffb4b4; margin-top:12px; }
+    .refresh { display:inline-flex; gap:8px; align-items:center; cursor:pointer; padding:6px 10px; border-radius:6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.02); color:#dff1ff; }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!doctype html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="utf-8" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;CyberPatriot Leaderboard&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width,initial-scale=1" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: #0f172a; color: #e6eef8; margin: 0; padding: 24px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.container { max-width: 960px; margin: 0 auto; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>h1 { font-size:1.4rem; margin:0; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.meta { color:#9fb3d8; font-size:0.9rem; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>table { width:100%; border-collapse:collapse; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:8px; overflow:hidden; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>th, td { padding:10px 12px; text-align:left; font-size:0.95rem; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>th { background: rgba(255,255,255,0.03); color:#cfe5ff; position:sticky; top:0; z-index:2; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>tr { border-bottom:1px solid rgba(255,255,255,0.03); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>tr:hover { background: rgba(255,255,255,0.02); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.rank { width:64px; font-weight:700; color:#ffd166; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.score { width:120px; text-align:right; font-weight:700; color:#9ae6b4; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.small { font-size:0.8rem; color:#9fb3d8; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.error { color:#ffb4b4; margin-top:12px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.refresh { display:inline-flex; gap:8px; align-items:center; cursor:pointer; padding:6px 10px; border-radius:6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.02); color:#dff1ff; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;header&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;h1&gt;CyberPatriot Live Leaderboard&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="meta"&gt;Auto-updates every minute • Source: scoreboard.uscyberpatriot.org&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;button id="manualRefresh" class="refresh"&gt;Refresh now&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="lastUpdated" class="small" style="margin-top:6px; text-align:right;"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/header&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;main&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;table id="leaderboard"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;thead&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;tr&gt;&lt;th class="rank"&gt;#&lt;/th&gt;&lt;th&gt;Team&lt;/th&gt;&lt;th&gt;Team Number&lt;/th&gt;&lt;th class="score"&gt;Score&lt;/th&gt;&lt;/tr&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/thead&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;tbody&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;tr&gt;&lt;td colspan="4" class="small"&gt;Loading…&lt;/td&gt;&lt;/tr&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/tbody&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/table&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div id="error" class="error" role="alert" style="display:none;"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/main&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const API = '/api/teams'; // adjust if needed</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const tbody = document.querySelector('#leaderboard tbody');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const lastUpdatedEl = document.getElementById('lastUpdated');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const errorEl = document.getElementById('error');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const manualRefresh = document.getElementById('manualRefresh');</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function load() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>errorEl.style.display = 'none';</p>
-<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const resp = await fetch(API);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (!resp.ok) throw new Error('Network error: ' + resp.status);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const json = await resp.json();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>render(json);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} catch (e) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>errorEl.style.display = 'block';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>errorEl.textContent = 'Failed to fetch leaderboard: ' + e.message;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>console.error(e);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function render(data) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>tbody.innerHTML = '';</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const teams = data.teams || [];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!teams.length) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>tbody.innerHTML = '&lt;tr&gt;&lt;td colspan="4" class="small"&gt;No teams found.&lt;/td&gt;&lt;/tr&gt;';</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>teams.forEach((t, idx) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const tr = document.createElement('tr');</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const rankTd = document.createElement('td'); rankTd.className='rank'; rankTd.textContent = idx + 1;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const nameTd = document.createElement('td'); nameTd.textContent = t.name || (t.raw &amp;&amp; t.raw.join(' | ')) || '-';</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const numTd = document.createElement('td'); numTd.textContent = t.teamNumber || '-';</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const scoreTd = document.createElement('td'); scoreTd.className='score'; scoreTd.textContent = (t.score !== null &amp;&amp; t.score !== undefined) ? t.score : '-';</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">          </span>tr.appendChild(rankTd);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>tr.appendChild(nameTd);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>tr.appendChild(numTd);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>tr.appendChild(scoreTd);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>tbody.appendChild(tr);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>lastUpdatedEl.textContent = 'Updated: ' + (data.updated ? new Date(data.updated).toLocaleString() : new Date().toLocaleString()) + ' • Teams: ' + (data.count || teams.length);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// initial load</p>
-<p class="p1"><span class="Apple-converted-space">    </span>load();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// update every minute (60,000 ms)</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const INTERVAL = 60 * 1000;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>setInterval(load, INTERVAL);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>manualRefresh.addEventListener('click', () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>load();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <div class="container">
+    <header>
+      <div>
+        <h1>CyberPatriot Live Leaderboard</h1>
+        <div class="meta">Auto-updates every minute • Source: scoreboard.uscyberpatriot.org</div>
+      </div>
+      <div>
+        <button id="manualRefresh" class="refresh">Refresh now</button>
+        <div id="lastUpdated" class="small" style="margin-top:6px; text-align:right;"></div>
+      </div>
+    </header>
+
+    <main>
+      <table id="leaderboard">
+        <thead>
+          <tr><th class="rank">#</th><th>Team</th><th>Team Number</th><th class="score">Score</th></tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="4" class="small">Loading…</td></tr>
+        </tbody>
+      </table>
+
+      <div id="error" class="error" role="alert" style="display:none;"></div>
+    </main>
+  </div>
+
+  <script>
+    const API = '/api/teams'; // adjust if needed
+    const tbody = document.querySelector('#leaderboard tbody');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    const errorEl = document.getElementById('error');
+    const manualRefresh = document.getElementById('manualRefresh');
+
+    async function load() {
+      errorEl.style.display = 'none';
+      try {
+        const resp = await fetch(API);
+        if (!resp.ok) throw new Error('Network error: ' + resp.status);
+        const json = await resp.json();
+        render(json);
+      } catch (e) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = 'Failed to fetch leaderboard: ' + e.message +
+          ' — make sure the backend (node server.js) is running and serving ' + API + '.';
+        console.error(e);
+      }
+    }
+
+    function render(data) {
+      tbody.innerHTML = '';
+      const teams = data.teams || [];
+      if (!teams.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="small">No teams found.</td></tr>';
+      } else {
+        teams.forEach((t, idx) => {
+          const tr = document.createElement('tr');
+          const rankTd = document.createElement('td'); rankTd.className='rank'; rankTd.textContent = idx + 1;
+          const nameTd = document.createElement('td'); nameTd.textContent = t.name || (t.raw && t.raw.join(' | ')) || '-';
+          const numTd = document.createElement('td'); numTd.textContent = t.teamNumber || '-';
+          const scoreTd = document.createElement('td'); scoreTd.className='score'; scoreTd.textContent = (t.score !== null && t.score !== undefined) ? t.score : '-';
+
+          tr.appendChild(rankTd);
+          tr.appendChild(nameTd);
+          tr.appendChild(numTd);
+          tr.appendChild(scoreTd);
+          tbody.appendChild(tr);
+        });
+      }
+
+      lastUpdatedEl.textContent = 'Updated: ' + (data.updated ? new Date(data.updated).toLocaleString() : new Date().toLocaleString()) + ' • Teams: ' + (data.count || teams.length);
+    }
+
+    // initial load
+    load();
+
+    // update every minute (60,000 ms)
+    const INTERVAL = 60 * 1000;
+    setInterval(load, INTERVAL);
+
+    manualRefresh.addEventListener('click', () => {
+      load();
+    });
+  </script>
 </body>
 </html>

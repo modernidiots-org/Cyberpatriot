@@ -4,6 +4,7 @@
 // Install: npm install express node-fetch@2 cheerio cors
 
 const express = require('express');
+const path = require('path');
 const fetch = require('node-fetch'); // v2
 const cheerio = require('cheerio');
 const cors = require('cors');
@@ -13,6 +14,9 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(cors());
+
+// serve the front-end (index.html and any other static assets) from the repo root
+app.use(express.static(path.join(__dirname)));
 
 // simple in-memory cache to avoid hammering the scoreboard
 let cache = {
@@ -122,6 +126,6 @@ app.get('/api/teams', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Scoreboard proxy running on http://localhost:${PORT}`);
+  console.log(`Leaderboard running on http://localhost:${PORT}`);
   console.log(`API endpoint: http://localhost:${PORT}/api/teams`);
 });
