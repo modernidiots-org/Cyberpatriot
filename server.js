@@ -1,15 +1,14 @@
 // server.js
 // Simple Express proxy that scrapes scoreboard.uscyberpatriot.org and returns a JSON list of teams + scores.
 // Usage: node server.js
-// Install: npm install express node-fetch@2 cheerio cors
+// Install: npm install express node-fetch@2 cors
 
 const express = require('express');
 const path = require('path');
 const fetch = require('node-fetch'); // v2
-const cheerio = require('cheerio');
 const cors = require('cors');
 
-const SCOREBOARD_URL = 'https://scoreboard.uscyberpatriot.org/';
+const SCORES_URL = 'https://scoreboard.uscyberpatriot.org/api/team/scores.php';
 const PORT = process.env.PORT || 3000;
 
 const app = express();
@@ -31,49 +30,36 @@ async function fetchTeams() {
     return cache.data;
   }
 
-  const res = await fetch(SCOREBOARD_URL, { headers: { 'User-Agent': 'Scoreboard-Scraper/1.0' }});
+  const res = await fetch(SCORES_URL, { headers: { 'User-Agent': 'Scoreboard-Scraper/1.0' }});
   if (!res.ok) throw new Error('Failed to fetch scoreboard: ' + res.status);
-  const html = await res.text();
-  const $ = cheerio.load(html);
+  const rows = (await res.json()).data || [];
 
-  // Read the header row so columns are located by name, not position.
-  const headerCells = $('table tr').first().find('th, td').map((i, el) => $(el).text().trim().toLowerCase()).get();
-  const col = (re) => headerCells.findIndex(h => re.test(h));
-  const idx = {
-    number: col(/team\s*(number|#|id)?$/),
-    location: col(/locat/),
-    division: col(/division/),
-    tier: col(/tier/),
-    score: col(/(current|total)?\s*score$/)
-  };
-  if (idx.score === -1) idx.score = col(/score/);
-
-  const parsed = [];
-  $('table tr').each((i, el) => {
-    const tds = $(el).find('td');
-    if (!tds.length) return;
-    const cells = Array.from(tds).map(td => $(td).text().trim());
-    const get = (k) => (idx[k] >= 0 && cells[idx[k]] !== undefined) ? cells[idx[k]] : null;
-    const scoreMatch = (get('score') || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
-    parsed.push({
-      teamNumber: get('number') || cells[0] || null,
-      location: get('location'),
-      division: get('division'),
-      tier: get('tier'),
-      score: scoreMatch ? parseFloat(scoreMatch[0]) : null,
-      raw: cells
-    });
+  // The scoreboard page fills its table from this JSON endpoint, so use it directly.
+  const parsed = rows.map(r => {
+    const n = parseFloat(String(r.total ?? r.ccs_score ?? '').replace(/,/g, ''));
+    return {
+      teamNumber: r.team_number || null,
+      location: r.location || null,
+      division: r.division || null,
+      tier: r.tier || null,
+      images: r.images ?? null,
+      playTime: r.play_time || null,
+      scoreTime: r.score_time || null,
+      code: r.code || '',
+      score: Number.isFinite(n) ? n : null
+    };
   });
 
   const filtered = parsed.filter(p => p.teamNumber);
-  filtered.sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
+  // higher score first; equal scores are separated by who reached it sooner (score time)
+filtered.sort((a, b) => ((b.score ?? -Infinity) - (a.score ?? -Infinity)) || String(a.scoreTime).localeCompare(String(b.scoreTime)));
 
   // competition ranking (ties share a rank) overall and within each division
   const rankOf = (list) => {
     const m = new Map();
     list.forEach((t, i) => {
       const prev = list[i - 1];
-      m.set(t, prev && prev.score === t.score ? m.get(prev) : i + 1);
+      m.set(t, prev && prev.score === t.score && prev.scoreTime === t.scoreTime ? m.get(prev) : i + 1);
     });
     return m;
   };
