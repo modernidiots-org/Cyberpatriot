@@ -86,11 +86,14 @@ const norm = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 app.get('/api/school', async (req, res) => {
   try {
     const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'teams.json'), 'utf8'));
-    const mine = new Map((cfg.teams || []).map(t => [norm(t), t]));
+    // teams may be plain numbers or { number, name } (the scoreboard feed has no team names)
+    const entries = (cfg.teams || []).map(t => typeof t === 'string' ? { number: t } : t);
+    const mine = new Map(entries.map(t => [norm(t.number), t]));
     const all = await fetchTeams();
     const found = all.filter(t => mine.has(norm(t.teamNumber)));
     const foundSet = new Set(found.map(t => norm(t.teamNumber)));
-    const missing = [...mine.entries()].filter(([k]) => !foundSet.has(k)).map(([, v]) => v);
+    const missing = [...mine.entries()].filter(([k]) => !foundSet.has(k)).map(([, v]) => v.number);
+    found.forEach(t => { t.name = mine.get(norm(t.teamNumber)).name || null; });
     found.forEach((t, i) => { t.schoolRank = i + 1; });
     res.json({ school: cfg.school || '', updated: new Date().toISOString(), count: found.length, missing, teams: found });
   } catch (err) {

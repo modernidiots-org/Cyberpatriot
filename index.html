@@ -38,10 +38,10 @@
     <main>
       <table id="leaderboard">
         <thead>
-          <tr><th class="rank">#</th><th>Team Number</th><th>Division / Tier</th><th class="score">Score</th><th class="score">National Rank</th></tr>
+          <tr><th class="rank">#</th><th>Team</th><th>Team Number</th><th>Division / Tier</th><th class="score">Score</th><th class="score">National Rank</th></tr>
         </thead>
         <tbody>
-          <tr><td colspan="5" class="small">Loading…</td></tr>
+          <tr><td colspan="6" class="small">Loading…</td></tr>
         </tbody>
       </table>
 
@@ -75,12 +75,13 @@
       tbody.innerHTML = '';
       const teams = data.teams || [];
       if (!teams.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="small">No teams found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="small">No teams found.</td></tr>';
       } else {
         teams.forEach((t) => {
           const tr = document.createElement('tr');
           const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.appendChild(td); };
           cell(t.schoolRank, 'rank');
+          cell(t.name || '-');
           cell(t.teamNumber || '-');
           cell([t.division, t.tier].filter(Boolean).join(' / ') || '-');
           cell(t.score ?? '-', 'score');
