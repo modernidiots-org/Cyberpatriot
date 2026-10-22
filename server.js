@@ -36,84 +36,82 @@ async function fetchTeams() {
   const html = await res.text();
   const $ = cheerio.load(html);
 
-  // try to find table rows with team data
-  // The scoreboard page generates rows dynamically sometimes; we attempt to be tolerant.
-  const rows = $('table tbody tr');
-  let teams = [];
+  // Read the header row so columns are located by name, not position.
+  const headerCells = $('table tr').first().find('th, td').map((i, el) => $(el).text().trim().toLowerCase()).get();
+  const col = (re) => headerCells.findIndex(h => re.test(h));
+  const idx = {
+    number: col(/team\s*(number|#|id)?$/),
+    location: col(/locat/),
+    division: col(/division/),
+    tier: col(/tier/),
+    score: col(/(current|total)?\s*score$/)
+  };
+  if (idx.score === -1) idx.score = col(/score/);
 
-  if (rows.length === 0) {
-    // fallback: find any <tr> under the page that look like they contain team info
-    $('tr').each((i, el) => {
-      const tds = $(el).find('td');
-      if (tds.length >= 3) {
-        // push candidate
-        teams.push(Array.from(tds).map(td => $(td).text().trim()));
-      }
-    });
-  } else {
-    rows.each((i, el) => {
-      const tds = $(el).find('td');
-      const textCells = Array.from(tds).map(td => $(td).text().trim());
-      if (textCells.length) teams.push(textCells);
-    });
-  }
-
-  // transform rows into objects. We don't know exact column layout (it can vary),
-  // so attempt to detect team number/name/score heuristically.
-  const parsed = teams.map(cells => {
-    // candidate fields
-    const joined = cells.join(' | ');
-    // find last numeric token that looks like a score (integer)
-    let score = null;
-    for (let i = cells.length - 1; i >= 0; i--) {
-      const n = cells[i].replace(/,/g, '').match(/-?\d+/);
-      if (n) { score = parseInt(n[0], 10); break; }
-    }
-
-    // attempt to find team number (usually a small integer) - first numeric token
-    let teamNumber = null;
-    for (let i = 0; i < cells.length; i++) {
-      const n = cells[i].replace(/,/g, '').match(/^\d{1,6}$/);
-      if (n) { teamNumber = n[0]; break; }
-    }
-
-    // find team name heuristically: a long-ish cell that is not numeric
-    let teamName = null;
-    for (let i = 0; i < cells.length; i++) {
-      if (!/^\s*$/.test(cells[i]) && !/^\d+$/.test(cells[i]) && cells[i].length > 2) {
-        // avoid known keywords
-        if (!/Score|Time|Images|Play Time|hh:mm:ss|Locat|Division|Tier|Team/i.test(cells[i])) {
-          teamName = cells[i];
-          break;
-        }
-      }
-    }
-
-    // fallback: first non-empty cell as name
-    if (!teamName && cells.length) teamName = cells[0];
-
-    return {
-      teamNumber: teamNumber || null,
-      name: teamName || null,
-      score: (Number.isFinite(score) ? score : null),
+  const parsed = [];
+  $('table tr').each((i, el) => {
+    const tds = $(el).find('td');
+    if (!tds.length) return;
+    const cells = Array.from(tds).map(td => $(td).text().trim());
+    const get = (k) => (idx[k] >= 0 && cells[idx[k]] !== undefined) ? cells[idx[k]] : null;
+    const scoreMatch = (get('score') || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+    parsed.push({
+      teamNumber: get('number') || cells[0] || null,
+      location: get('location'),
+      division: get('division'),
+      tier: get('tier'),
+      score: scoreMatch ? parseFloat(scoreMatch[0]) : null,
       raw: cells
-    };
+    });
   });
 
-  // Only keep items that have at least a name or score
-  const filtered = parsed.filter(p => p.name || p.score !== null);
+  const filtered = parsed.filter(p => p.teamNumber);
+  filtered.sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
 
-  // sort by score desc where available; if no score, keep original order
-  filtered.sort((a, b) => {
-    if (a.score === null && b.score === null) return 0;
-    if (a.score === null) return 1;
-    if (b.score === null) return -1;
-    return b.score - a.score;
+  // competition ranking (ties share a rank) overall and within each division
+  const rankOf = (list) => {
+    const m = new Map();
+    list.forEach((t, i) => {
+      const prev = list[i - 1];
+      m.set(t, prev && prev.score === t.score ? m.get(prev) : i + 1);
+    });
+    return m;
+  };
+  const overall = rankOf(filtered);
+  const byDiv = {};
+  filtered.forEach(t => (byDiv[t.division || ''] = byDiv[t.division || ''] || []).push(t));
+  const divRank = new Map(), divSize = {};
+  Object.entries(byDiv).forEach(([d, list]) => { divSize[d] = list.length; rankOf(list).forEach((r, t) => divRank.set(t, r)); });
+  filtered.forEach(t => {
+    t.nationalRank = overall.get(t);
+    t.nationalTotal = filtered.length;
+    t.divisionRank = divRank.get(t);
+    t.divisionTotal = divSize[t.division || ''];
   });
 
   cache = { ts: Date.now(), ttl: cache.ttl, data: filtered };
   return filtered;
 }
+
+const fs = require('fs');
+const norm = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Only the school's teams (listed in teams.json), ranked within the school, with national ranks attached.
+app.get('/api/school', async (req, res) => {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'teams.json'), 'utf8'));
+    const mine = new Map((cfg.teams || []).map(t => [norm(t), t]));
+    const all = await fetchTeams();
+    const found = all.filter(t => mine.has(norm(t.teamNumber)));
+    const foundSet = new Set(found.map(t => norm(t.teamNumber)));
+    const missing = [...mine.entries()].filter(([k]) => !foundSet.has(k)).map(([, v]) => v);
+    found.forEach((t, i) => { t.schoolRank = i + 1; });
+    res.json({ school: cfg.school || '', updated: new Date().toISOString(), count: found.length, missing, teams: found });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build school view', details: err.message });
+  }
+});
 
 app.get('/api/teams', async (req, res) => {
   try {
