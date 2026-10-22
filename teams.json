@@ -1,1 +1,4 @@
-{"school":"Test","teams":["19-0004","19-0002","19-9999"]}
+{
+  "school": "My School",
+  "teams": []
+}
