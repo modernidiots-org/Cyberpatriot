@@ -1,0 +1,11 @@
+{
+  "school": "Boerne Samuel V. Champion High School",
+  "teams": [
+    { "number": "19-0570", "name": "YES" },
+    { "number": "19-0568", "name": "Cyber Goon Squad" },
+    { "number": "19-0569", "name": "All Girls Team" },
+    { "number": "19-0571", "name": "WannaCry?" },
+    { "number": "19-0572", "name": "Ctrl-Alt-Defeat" },
+    { "number": "19-3055", "name": "Bread" }
+  ]
+}

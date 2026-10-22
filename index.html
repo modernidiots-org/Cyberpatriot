@@ -38,10 +38,10 @@
     <main>
       <table id="leaderboard">
         <thead>
-          <tr><th class="rank">#</th><th>Team</th><th>Team Number</th><th class="score">Score</th></tr>
+          <tr><th class="rank">#</th><th>Team</th><th>Team Number</th><th>Division / Tier</th><th class="score">Score</th><th class="score">National Rank</th></tr>
         </thead>
         <tbody>
-          <tr><td colspan="4" class="small">Loading…</td></tr>
+          <tr><td colspan="6" class="small">Loading…</td></tr>
         </tbody>
       </table>
 
@@ -50,7 +50,7 @@
   </div>
 
   <script>
-    const API = '/api/teams'; // adjust if needed
+    const API = '/api/school'; // adjust if needed
     const tbody = document.querySelector('#leaderboard tbody');
     const lastUpdatedEl = document.getElementById('lastUpdated');
     const errorEl = document.getElementById('error');
@@ -75,21 +75,24 @@
       tbody.innerHTML = '';
       const teams = data.teams || [];
       if (!teams.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="small">No teams found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="small">No teams found.</td></tr>';
       } else {
-        teams.forEach((t, idx) => {
+        teams.forEach((t) => {
           const tr = document.createElement('tr');
-          const rankTd = document.createElement('td'); rankTd.className='rank'; rankTd.textContent = idx + 1;
-          const nameTd = document.createElement('td'); nameTd.textContent = t.name || (t.raw && t.raw.join(' | ')) || '-';
-          const numTd = document.createElement('td'); numTd.textContent = t.teamNumber || '-';
-          const scoreTd = document.createElement('td'); scoreTd.className='score'; scoreTd.textContent = (t.score !== null && t.score !== undefined) ? t.score : '-';
-
-          tr.appendChild(rankTd);
-          tr.appendChild(nameTd);
-          tr.appendChild(numTd);
-          tr.appendChild(scoreTd);
+          const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.appendChild(td); };
+          cell(t.schoolRank, 'rank');
+          cell(t.name || '-');
+          cell(t.teamNumber || '-');
+          cell([t.division, t.tier].filter(Boolean).join(' / ') || '-');
+          cell(t.score ?? '-', 'score');
+          cell(t.divisionRank ? '#' + t.divisionRank + ' of ' + t.divisionTotal : '-', 'score');
+          tr.title = 'Overall: #' + t.nationalRank + ' of ' + t.nationalTotal;
           tbody.appendChild(tr);
         });
+      }
+      if (data.missing && data.missing.length) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = 'Not found on scoreboard yet: ' + data.missing.join(', ');
       }
 
       lastUpdatedEl.textContent = 'Updated: ' + (data.updated ? new Date(data.updated).toLocaleString() : new Date().toLocaleString()) + ' • Teams: ' + (data.count || teams.length);

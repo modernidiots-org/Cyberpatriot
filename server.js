@@ -1,15 +1,14 @@
 // server.js
 // Simple Express proxy that scrapes scoreboard.uscyberpatriot.org and returns a JSON list of teams + scores.
 // Usage: node server.js
-// Install: npm install express node-fetch@2 cheerio cors
+// Install: npm install express node-fetch@2 cors
 
 const express = require('express');
 const path = require('path');
 const fetch = require('node-fetch'); // v2
-const cheerio = require('cheerio');
 const cors = require('cors');
 
-const SCOREBOARD_URL = 'https://scoreboard.uscyberpatriot.org/';
+const SCORES_URL = 'https://scoreboard.uscyberpatriot.org/api/team/scores.php';
 const PORT = process.env.PORT || 3000;
 
 const app = express();
@@ -31,89 +30,77 @@ async function fetchTeams() {
     return cache.data;
   }
 
-  const res = await fetch(SCOREBOARD_URL, { headers: { 'User-Agent': 'Scoreboard-Scraper/1.0' }});
+  const res = await fetch(SCORES_URL, { headers: { 'User-Agent': 'Scoreboard-Scraper/1.0' }});
   if (!res.ok) throw new Error('Failed to fetch scoreboard: ' + res.status);
-  const html = await res.text();
-  const $ = cheerio.load(html);
+  const rows = (await res.json()).data || [];
 
-  // try to find table rows with team data
-  // The scoreboard page generates rows dynamically sometimes; we attempt to be tolerant.
-  const rows = $('table tbody tr');
-  let teams = [];
-
-  if (rows.length === 0) {
-    // fallback: find any <tr> under the page that look like they contain team info
-    $('tr').each((i, el) => {
-      const tds = $(el).find('td');
-      if (tds.length >= 3) {
-        // push candidate
-        teams.push(Array.from(tds).map(td => $(td).text().trim()));
-      }
-    });
-  } else {
-    rows.each((i, el) => {
-      const tds = $(el).find('td');
-      const textCells = Array.from(tds).map(td => $(td).text().trim());
-      if (textCells.length) teams.push(textCells);
-    });
-  }
-
-  // transform rows into objects. We don't know exact column layout (it can vary),
-  // so attempt to detect team number/name/score heuristically.
-  const parsed = teams.map(cells => {
-    // candidate fields
-    const joined = cells.join(' | ');
-    // find last numeric token that looks like a score (integer)
-    let score = null;
-    for (let i = cells.length - 1; i >= 0; i--) {
-      const n = cells[i].replace(/,/g, '').match(/-?\d+/);
-      if (n) { score = parseInt(n[0], 10); break; }
-    }
-
-    // attempt to find team number (usually a small integer) - first numeric token
-    let teamNumber = null;
-    for (let i = 0; i < cells.length; i++) {
-      const n = cells[i].replace(/,/g, '').match(/^\d{1,6}$/);
-      if (n) { teamNumber = n[0]; break; }
-    }
-
-    // find team name heuristically: a long-ish cell that is not numeric
-    let teamName = null;
-    for (let i = 0; i < cells.length; i++) {
-      if (!/^\s*$/.test(cells[i]) && !/^\d+$/.test(cells[i]) && cells[i].length > 2) {
-        // avoid known keywords
-        if (!/Score|Time|Images|Play Time|hh:mm:ss|Locat|Division|Tier|Team/i.test(cells[i])) {
-          teamName = cells[i];
-          break;
-        }
-      }
-    }
-
-    // fallback: first non-empty cell as name
-    if (!teamName && cells.length) teamName = cells[0];
-
+  // The scoreboard page fills its table from this JSON endpoint, so use it directly.
+  const parsed = rows.map(r => {
+    const n = parseFloat(String(r.total ?? r.ccs_score ?? '').replace(/,/g, ''));
     return {
-      teamNumber: teamNumber || null,
-      name: teamName || null,
-      score: (Number.isFinite(score) ? score : null),
-      raw: cells
+      teamNumber: r.team_number || null,
+      location: r.location || null,
+      division: r.division || null,
+      tier: r.tier || null,
+      images: r.images ?? null,
+      playTime: r.play_time || null,
+      scoreTime: r.score_time || null,
+      code: r.code || '',
+      score: Number.isFinite(n) ? n : null
     };
   });
 
-  // Only keep items that have at least a name or score
-  const filtered = parsed.filter(p => p.name || p.score !== null);
+  const filtered = parsed.filter(p => p.teamNumber);
+  // higher score first; equal scores are separated by who reached it sooner (score time)
+filtered.sort((a, b) => ((b.score ?? -Infinity) - (a.score ?? -Infinity)) || String(a.scoreTime).localeCompare(String(b.scoreTime)));
 
-  // sort by score desc where available; if no score, keep original order
-  filtered.sort((a, b) => {
-    if (a.score === null && b.score === null) return 0;
-    if (a.score === null) return 1;
-    if (b.score === null) return -1;
-    return b.score - a.score;
+  // competition ranking (ties share a rank) overall and within each division
+  const rankOf = (list) => {
+    const m = new Map();
+    list.forEach((t, i) => {
+      const prev = list[i - 1];
+      m.set(t, prev && prev.score === t.score && prev.scoreTime === t.scoreTime ? m.get(prev) : i + 1);
+    });
+    return m;
+  };
+  const overall = rankOf(filtered);
+  const byDiv = {};
+  filtered.forEach(t => (byDiv[t.division || ''] = byDiv[t.division || ''] || []).push(t));
+  const divRank = new Map(), divSize = {};
+  Object.entries(byDiv).forEach(([d, list]) => { divSize[d] = list.length; rankOf(list).forEach((r, t) => divRank.set(t, r)); });
+  filtered.forEach(t => {
+    t.nationalRank = overall.get(t);
+    t.nationalTotal = filtered.length;
+    t.divisionRank = divRank.get(t);
+    t.divisionTotal = divSize[t.division || ''];
   });
 
   cache = { ts: Date.now(), ttl: cache.ttl, data: filtered };
   return filtered;
 }
+
+const fs = require('fs');
+const norm = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Only the school's teams (listed in teams.json), ranked within the school, with national ranks attached.
+app.get('/api/school', async (req, res) => {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'teams.json'), 'utf8'));
+    // teams may be plain numbers or { number, name } (the scoreboard feed has no team names)
+    const entries = (cfg.teams || []).map(t => typeof t === 'string' ? { number: t } : t);
+    const mine = new Map(entries.map(t => [norm(t.number), t]));
+    const all = await fetchTeams();
+    const found = all.filter(t => mine.has(norm(t.teamNumber)));
+    const foundSet = new Set(found.map(t => norm(t.teamNumber)));
+    const missing = [...mine.entries()].filter(([k]) => !foundSet.has(k)).map(([, v]) => v.number);
+    found.forEach(t => { t.name = mine.get(norm(t.teamNumber)).name || null; });
+    found.forEach((t, i) => { t.schoolRank = i + 1; });
+    res.json({ school: cfg.school || '', updated: new Date().toISOString(), count: found.length, missing, teams: found });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build school view', details: err.message });
+  }
+});
 
 app.get('/api/teams', async (req, res) => {
   try {
